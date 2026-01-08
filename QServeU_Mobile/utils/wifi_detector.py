@@ -2,10 +2,10 @@ from kivy.utils import platform
 import subprocess
 import re
 
+
 class WiFiDetector:
     def __init__(self):
         self.platform = platform
-
         if self.platform == 'android':
             self.request_android_permissions()
 
@@ -14,11 +14,13 @@ class WiFiDetector:
         try:
             from android.permissions import request_permissions, Permission
 
+            # We added POST_NOTIFICATIONS here!
             request_permissions([
                 Permission.ACCESS_FINE_LOCATION,
                 Permission.ACCESS_COARSE_LOCATION,
                 Permission.ACCESS_WIFI_STATE,
-                Permission.ACCESS_NETWORK_STATE
+                Permission.ACCESS_NETWORK_STATE,
+                Permission.POST_NOTIFICATIONS
             ])
         except Exception as e:
             print("Android permission error:", e)
@@ -32,7 +34,6 @@ class WiFiDetector:
                 shell=True,
                 text=True
             )
-
             match = re.search(r"SSID\s*:\s(.+)", output)
             if match:
                 ssid = match.group(1).strip()
@@ -40,7 +41,6 @@ class WiFiDetector:
                     return ssid
         except Exception as e:
             print("Windows WiFi error:", e)
-
         return None
 
     # ---------------- ANDROID WIFI ----------------
@@ -48,7 +48,6 @@ class WiFiDetector:
         try:
             from jnius import autoclass
             from kivy.android import PythonActivity
-
             Context = autoclass('android.content.Context')
             activity = PythonActivity.mActivity
             wifi_manager = activity.getSystemService(Context.WIFI_SERVICE)
@@ -58,29 +57,23 @@ class WiFiDetector:
 
             info = wifi_manager.getConnectionInfo()
             ssid = info.getSSID()
-
             if ssid and ssid != "<unknown ssid>":
                 return ssid.strip('"')
-
         except Exception as e:
             print("Android WiFi error:", e)
-
         return None
 
     # ---------------- MAIN METHOD ----------------
     def get_current_ssid(self):
         if self.platform == 'android':
             return self.get_android_ssid()
-
         elif self.platform == 'win':
             return self.get_windows_ssid()
-
         else:
             return None
 
     def get_connection_status(self, target_ssid):
         current_ssid = self.get_current_ssid()
-
         print(f"🔎 WiFi Check - Current: {current_ssid} | Target: {target_ssid}")
 
         if not current_ssid:
