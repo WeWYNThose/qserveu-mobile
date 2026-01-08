@@ -616,6 +616,8 @@ class HomeScreen(BaseScreen):
         content.add_widget(btn_box)
         popup.open()
 
+
+
 class QueueStatusScreen(BaseScreen):
     def __init__(self, db, **kwargs):
         super().__init__(**kwargs)
@@ -665,7 +667,7 @@ class QueueStatusScreen(BaseScreen):
         layout.add_widget(middle)
         layout.add_widget(bottom_nav)
         self.add_widget(layout)
-        Clock.schedule_interval(self.auto_refresh, 10)
+        Clock.schedule_interval(self.auto_refresh, 3)
 
     def create_bottom_nav(self, queue_active=False):
         bottom_nav = BoxLayout(size_hint=(1, 0.15), padding=0, spacing=0)
@@ -737,10 +739,12 @@ class QueueStatusScreen(BaseScreen):
         app = App.get_running_app()
         if not app.current_student: return
 
+        # DEBUG PRINT: Verify this runs every 3 seconds in PyCharm console
+        print("DEBUG: Checking database for updates...")
+
         active_queue = self.db.get_student_queue(app.current_student['id'])
 
         # --- NEW CODE START ---
-        # This line sends the data to the NotificationManager we created in Step 1
         if hasattr(app, 'notifications'):
             app.notifications.update_status(active_queue)
         # --- NEW CODE END ---
@@ -749,10 +753,13 @@ class QueueStatusScreen(BaseScreen):
 
         # If there is an active queue, show it
         if active_queue:
+            print(f"DEBUG: Found Queue! People Ahead: {active_queue.get('people_ahead')}")
             self.refresh_btn.disabled = False
             self.refresh_btn.opacity = 1
             self.show_active_queue_ui(active_queue)
             return
+
+        # ... (rest of the function stays the same)
 
         # 2. If no active queue, check for Unrated Completed Queue
         unrated = self.db.get_pending_feedback(app.current_student['id'])
