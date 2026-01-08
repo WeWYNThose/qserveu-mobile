@@ -133,21 +133,21 @@ class MobileDatabase:
     def get_student_queue(self, student_id):
         """
         Get the student's latest queue.
-        We include 'cancelled' here so the UI can show the cancellation message.
+        FIX: Look back 24 hours instead of just 'today' to fix timezone issues.
         """
         try:
-            today = date.today().isoformat()
-            # We fetch the most recent queue created today
+            # CHANGE THIS LINE: Instead of date.today(), go back 1 day
+            yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+
             response = self.client.table('queues').select('*, offices(name)') \
                 .eq('student_id', student_id) \
-                .gte('created_at', today) \
+                .gte('created_at', yesterday) \
                 .order('created_at', desc=True) \
                 .limit(1) \
                 .execute()
 
             if response.data:
                 queue = response.data[0]
-                # Return it if it's Waiting, Serving, OR Cancelled
                 if queue['status'] in ['waiting', 'serving', 'cancelled']:
                     return queue
             return None
